@@ -6,6 +6,7 @@ const list_fonts = @import("list_fonts.zig");
 const help = @import("help.zig");
 const version = @import("version.zig");
 const list_keybinds = @import("list_keybinds.zig");
+const output_buffer = @import("output_buffer.zig");
 const list_themes = @import("list_themes.zig");
 const list_colors = @import("list_colors.zig");
 const list_actions = @import("list_actions.zig");
@@ -29,6 +30,9 @@ pub const Action = enum {
 
     /// List available keybinds
     @"list-keybinds",
+
+    /// Output the scrollback buffer to the terminal
+    @"output-buffer",
 
     /// List available themes
     @"list-themes",
@@ -144,6 +148,7 @@ pub const Action = enum {
             .help => try help.run(alloc),
             .@"list-fonts" => try list_fonts.run(alloc),
             .@"list-keybinds" => try list_keybinds.run(alloc),
+            .@"output-buffer" => try output_buffer.run(alloc),
             .@"list-themes" => try list_themes.run(alloc),
             .@"list-colors" => try list_colors.run(alloc),
             .@"list-actions" => try list_actions.run(alloc),
@@ -179,6 +184,7 @@ pub const Action = enum {
                 .help => help.Options,
                 .@"list-fonts" => list_fonts.Options,
                 .@"list-keybinds" => list_keybinds.Options,
+                .@"output-buffer" => output_buffer.Options,
                 .@"list-themes" => list_themes.Options,
                 .@"list-colors" => list_colors.Options,
                 .@"list-actions" => list_actions.Options,
