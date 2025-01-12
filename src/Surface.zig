@@ -4273,14 +4273,6 @@ const WriteScreenLoc = enum {
     selection, // Selected text
 };
 
-fn outputScreenFile (
-    self: *Surface,
-    loc: WriteScreenLoc,
-    write_action: input.Binding.Action.WriteScreenAction,
-) !void {
-
-}
-
 fn writeScreenFile(
     self: *Surface,
     loc: WriteScreenLoc,
