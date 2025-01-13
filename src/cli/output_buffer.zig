@@ -10,6 +10,11 @@ const vaxis = @import("vaxis");
 const input = @import("../input.zig");
 const tui = @import("tui.zig");
 const Binding = input.Binding;
+// const Surface = @import("../terminal/Surface.zig");
+// const PageList = @import("../terminal/PageList.zig");
+const terminal = @import("../terminal/main.zig");
+
+terminal: terminal.Terminal,
 
 pub const Options = struct {
     /// If `true`, print out the default keybinds instead of the ones configured
@@ -46,20 +51,41 @@ pub fn run(alloc: Allocator) !u8 {
         try args.parse(Options, alloc, &opts, &iter);
     }
 
-    var config = if (opts.default) try Config.default(alloc) else try Config.load(alloc);
-    defer config.deinit();
+    // const stdout = std.io.getStdOut().writer();
+    // try stdout.print("Adriel", .{});
+    // Surface.writeScreenFile()
 
-    const stdout = std.io.getStdOut();
-
-    // Despite being under the posix namespace, this also works on Windows as of zig 0.13.0
-    if (tui.can_pretty_print and !opts.plain and std.posix.isatty(stdout.handle)) {
-        return prettyPrint(alloc, config.keybind);
-    } else {
-        try config.keybind.formatEntryDocs(
-            configpkg.entryFormatter("keybind", stdout.writer()),
-            opts.docs,
-        );
-    }
+    terminal.screen.writeScreenFile(terminal.screen.WriteScreenLoc, input.Binding.Action.WriteScreenAction.contents);
+    // const pages = &terminal.screen.pages;
+    // const sel_: ?terminal.Selection = switch (loc) {
+    //     .history => history: {
+    //         // We do not support this for alternate screens
+    //         // because they don't have scrollback anyways.
+    //         if (self.io.terminal.active_screen == .alternate) {
+    //             break :history null;
+    //         }
+    //
+    //         break :history terminal.Selection.init(
+    //             pages.getTopLeft(.history),
+    //             pages.getBottomRight(.history) orelse
+    //                 break :history null,
+    //             false,
+    //         );
+    //     },
+    //
+    //     .screen => screen: {
+    //         break :screen terminal.Selection.init(
+    //             pages.getTopLeft(.screen),
+    //             pages.getBottomRight(.screen) orelse
+    //                 break :screen null,
+    //             false,
+    //         );
+    //     },
+    //
+    //     .selection => self.io.terminal.screen.selection,
+    // };
+    //
+    //
 
     return 0;
 }

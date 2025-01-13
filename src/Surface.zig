@@ -4267,7 +4267,7 @@ fn closingAction(action: input.Binding.Action) bool {
 }
 
 /// The portion of the screen to write for writeScreenFile.
-const WriteScreenLoc = enum {
+pub const WriteScreenLoc = enum {
     screen, // Full screen
     history, // History (scrollback)
     selection, // Selected text
@@ -4282,6 +4282,7 @@ fn writeScreenFile(
     var tmp_dir = try internal_os.TempDir.init();
     errdefer tmp_dir.deinit();
 
+    // const writer = std.io.getStdOut().writer();
     var filename_buf: [std.fs.max_path_bytes]u8 = undefined;
     const filename = try std.fmt.bufPrint(&filename_buf, "{s}.txt", .{@tagName(loc)});
 
@@ -4297,6 +4298,9 @@ fn writeScreenFile(
 
     // Screen.dumpString writes byte-by-byte, so buffer it
     var buf_writer = std.io.bufferedWriter(file.writer());
+    if (write_action == input.Binding.Action.WriteScreenAction.contents) {
+        buf_writer = std.io.getStdOut();
+    }
 
     // Write the scrollback contents. This requires a lock.
     {
@@ -4355,17 +4359,22 @@ fn writeScreenFile(
         );
     }
     try buf_writer.flush();
+    if (write_action == input.Binding.Action.WriteScreenAction.contents) {
+        // buf_writer = std.io.getStdOut();
+        // pass
+    } else {
+        try buf_writer.flush();
+        // Get the final path
+        var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const path = try tmp_dir.dir.realpath(filename, &path_buf);
 
-    // Get the final path
-    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const path = try tmp_dir.dir.realpath(filename, &path_buf);
-
-    switch (write_action) {
-        .open => try internal_os.open(self.alloc, .text, path),
-        .paste => self.io.queueMessage(try termio.Message.writeReq(
-            self.alloc,
-            path,
-        ), .unlocked),
+        switch (write_action) {
+            .open => try internal_os.open(self.alloc, .text, path),
+            .paste => self.io.queueMessage(try termio.Message.writeReq(
+                self.alloc,
+                path,
+            ), .unlocked),
+        }
     }
 }
 
