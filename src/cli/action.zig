@@ -13,6 +13,7 @@ const show_config = @import("show_config.zig");
 const validate_config = @import("validate_config.zig");
 const crash_report = @import("crash_report.zig");
 const show_face = @import("show_face.zig");
+const surface = @import("../Surface.zig");
 
 /// Special commands that can be invoked via CLI flags. These are all
 /// invoked by using `+<action>` as a CLI flag. The only exception is
@@ -29,6 +30,9 @@ pub const Action = enum {
 
     /// List available keybinds
     @"list-keybinds",
+
+    /// Output the scrollback buffer to the terminal
+    @"output-buffer",
 
     /// List available themes
     @"list-themes",
@@ -144,6 +148,7 @@ pub const Action = enum {
             .help => try help.run(alloc),
             .@"list-fonts" => try list_fonts.run(alloc),
             .@"list-keybinds" => try list_keybinds.run(alloc),
+            .@"output-buffer" => try surface.run(alloc),
             .@"list-themes" => try list_themes.run(alloc),
             .@"list-colors" => try list_colors.run(alloc),
             .@"list-actions" => try list_actions.run(alloc),
@@ -179,6 +184,7 @@ pub const Action = enum {
                 .help => help.Options,
                 .@"list-fonts" => list_fonts.Options,
                 .@"list-keybinds" => list_keybinds.Options,
+                .@"output-buffer" => surface.Options,
                 .@"list-themes" => list_themes.Options,
                 .@"list-colors" => list_colors.Options,
                 .@"list-actions" => list_actions.Options,
