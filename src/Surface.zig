@@ -4266,6 +4266,66 @@ fn closingAction(action: input.Binding.Action) bool {
     };
 }
 
+pub const Options = struct {
+    /// This is set by the CLI parser for deinit.
+    _arena: ?ArenaAllocator = null,
+
+    /// The font family to search for. If this is set, then only fonts
+    /// matching this family will be listed.
+    family: ?[:0]const u8 = null,
+
+    /// The style name to search for.
+    style: ?[:0]const u8 = null,
+
+    /// Font styles to search for. If this is set, then only fonts that
+    /// match the given styles will be listed.
+    bold: bool = false,
+    italic: bool = false,
+};
+
+pub fn run(self: *Surface) !u8 {
+    // const pages = terminal.screen.pages;
+    // const pages = &self.io.terminal.screen.pages;
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("adriel", .{});
+    &self.io.terminal.screen.pages;
+    // Surface.writeScreenFile()
+
+    // screen.writeScreenFile(terminal.screen.WriteScreenLoc, input.Binding.Action.WriteScreenAction.contents);
+    // const pages = &terminal.screen.pages;
+    // const sel_: ?terminal.Selection = switch (loc) {
+    //     .history => history: {
+    //         // We do not support this for alternate screens
+    //         // because they don't have scrollback anyways.
+    //         if (self.io.terminal.active_screen == .alternate) {
+    //             break :history null;
+    //         }
+    //
+    //         break :history terminal.Selection.init(
+    //             pages.getTopLeft(.history),
+    //             pages.getBottomRight(.history) orelse
+    //                 break :history null,
+    //             false,
+    //         );
+    //     },
+    //
+    //     .screen => screen: {
+    //         break :screen terminal.Selection.init(
+    //             pages.getTopLeft(.screen),
+    //             pages.getBottomRight(.screen) orelse
+    //                 break :screen null,
+    //             false,
+    //         );
+    //     },
+    //
+    //     .selection => self.io.terminal.screen.selection,
+    // };
+    //
+    //
+
+    return 0;
+}
+
 /// The portion of the screen to write for writeScreenFile.
 pub const WriteScreenLoc = enum {
     screen, // Full screen
