@@ -16,7 +16,9 @@ pub const Mailbox = apprt.surface.Mailbox;
 pub const Message = apprt.surface.Message;
 
 const std = @import("std");
+const process = std.process;
 const builtin = @import("builtin");
+const env = @import("os/env.zig");
 const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
 const ArenaAllocator = std.heap.ArenaAllocator;
@@ -28,7 +30,7 @@ const renderer = @import("renderer.zig");
 const termio = @import("termio.zig");
 const objc = @import("objc");
 const imgui = @import("imgui");
-const Pty = @import("pty.zig").Pty;
+const pty = @import("pty.zig");
 const font = @import("font/main.zig");
 const Command = @import("Command.zig");
 const terminal = @import("terminal/main.zig");
@@ -4314,6 +4316,81 @@ fn closingAction(action: input.Binding.Action) bool {
     };
 }
 
+fn openScreenFile(
+    self: *Surface,
+    file_path: []const u8,
+) !void {
+    std.log.info("Trying to open the file in neovim for you", .{});
+    const editor = std.posix.getenv("EDITOR") orelse {
+        std.log.err("EDITOR environment variable not set", .{});
+        return error.EnvironmentVariableNotFound;
+    };
+    const allocator = std.heap.page_allocator;
+    // const argv = try allocator.alloc([]const u8, 2);
+    // //
+    // argv[0] = editor;
+    // argv[1] = file_path;
+    // // std.log.info("Got the editor correctly", .{});
+    // // var cmd = std.process.Child.init(argv, std.heap.page_allocator);
+    // // _ = try cmd.spawnAndWait();
+    //
+    // const path = (try Command.expandPath(allocator, editor)).?;
+    // // // const myPty = pty.Pty{};
+    // // const myPty = try pty.Pty.open(pty.winsize{
+    // //     .ws_row = 24,
+    // //     .ws_col = 80,
+    // // });
+    // // defer myPty.deinit();
+    // // myPty.childPreExec();
+    // // Build our subcommand
+    // var cmd: Command = .{
+    //     .path = path,
+    //     .args = argv,
+    //     // .env = &self.env,
+    //     // .cwd = cwd,
+    //     // .stdin = if (builtin.os.tag == .windows) null else .{ .handle = pty.slave },
+    //     // .stdout = if (builtin.os.tag == .windows) null else .{ .handle = pty.slave },
+    //     // .stderr = if (builtin.os.tag == .windows) null else .{ .handle = pty.slave },
+    //     .pseudo_console = {},
+    //     // .pre_exec = if (builtin.os.tag == .windows) null else (struct {
+    //     //     fn callback(cmd: *Command) void {
+    //     //         const sp = cmd.getData(Subprocess) orelse unreachable;
+    //     //         sp.childPreExec() catch |err| log.err(
+    //     //             "error initializing child: {}",
+    //     //             .{err},
+    //     //         );
+    //     //     }
+    //     // }).callback,
+    //     // .data = self,
+    //     // .linux_cgroup = self.linux_cgroup,
+    // };
+    // try cmd.start(allocator);
+    //
+
+    // Allocate a buffer to hold the command. Add extra space for safety and the escape sequences.
+    const command_buf = try allocator.alloc(u8, editor.len + file_path.len + 128);
+    errdefer allocator.free(command_buf);
+
+    const command = try std.fmt.bufPrint(
+        command_buf,
+        "{s} {s}\n",
+        .{ editor, file_path },
+    );
+
+    self.io.queueMessage(try termio.Message.writeReq(
+        allocator,
+        command,
+    ), .unlocked);
+
+    // const message: termio.Message = .{
+    //     .write_alloc = .{
+    //         .alloc = allocator,
+    //         .data = command,
+    //     },
+    // };
+    // self.io.queueMessage(message, .unlocked);
+}
+
 /// The portion of the screen to write for writeScreenFile.
 const WriteScreenLoc = enum {
     screen, // Full screen
@@ -4410,6 +4487,7 @@ fn writeScreenFile(
 
     switch (write_action) {
         .open => try internal_os.open(self.alloc, .text, path),
+        .editor => try self.openScreenFile(path),
         .paste => self.io.queueMessage(try termio.Message.writeReq(
             self.alloc,
             path,
