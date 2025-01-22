@@ -9,7 +9,7 @@
 //! it just draws and responds to events. The events come from the application
 //! runtime so the runtime can determine when and how those are delivered
 //! (i.e. with focus, without focus, and so on).
-const Surface = @This();
+pub const Surface = @This();
 
 const apprt = @import("apprt.zig");
 pub const Mailbox = apprt.surface.Mailbox;
@@ -4045,6 +4045,8 @@ pub fn performBindingAction(self: *Surface, action: input.Binding.Action) !bool 
             v,
         ),
 
+        .write_to_buffer => try self.writeToBuffer(),
+
         .write_scrollback_file => |v| try self.writeScreenFile(
             .history,
             v,
@@ -4272,6 +4274,66 @@ const WriteScreenLoc = enum {
     history, // History (scrollback)
     selection, // Selected text
 };
+
+pub fn writeToBuffer(
+    self: *Surface,
+) !void {
+    self.renderer_state.mutex.lock();
+    defer self.renderer_state.mutex.unlock();
+
+    // We only dump history if we have history. We still keep
+    // the file and write the empty file to the pty so that this
+    // command always works on the primary screen.
+    // const pages = &self.io.terminal.screen.pages;
+    // const sel_: ?terminal.Selection = switch (loc) {
+    //     .history => history: {
+    //         // We do not support this for alternate screens
+    //         // because they don't have scrollback anyways.
+    //         if (self.io.terminal.active_screen == .alternate) {
+    //             break :history null;
+    //         }
+    //
+    //         break :history terminal.Selection.init(
+    //             pages.getTopLeft(.history),
+    //             pages.getBottomRight(.history) orelse
+    //                 break :history null,
+    //             false,
+    //         );
+    //     },
+    //
+    //     .screen => screen: {
+    //         break :screen terminal.Selection.init(
+    //             pages.getTopLeft(.screen),
+    //             pages.getBottomRight(.screen) orelse
+    //                 break :screen null,
+    //             false,
+    //         );
+    //     },
+    //
+    //     .selection => self.io.terminal.screen.selection,
+    // };
+
+    // const sel = sel_ orelse {
+    //     // If we have no selection we have no data so we do nothing.
+    //     tmp_dir.deinit();
+    //     return;
+    // };
+
+    // Use topLeft and bottomRight to ensure correct coordinate ordering
+    // const tl = sel.topLeft(&self.io.terminal.screen);
+    // const br = sel.bottomRight(&self.io.terminal.screen);
+
+    // try self.io.terminal.screen.dumpString(
+    //     buf_writer.writer(),
+    //     .{
+    //         .tl = tl,
+    //         .br = br,
+    //         .unwrap = true,
+    //     },
+    // );
+    // }
+
+}
 
 fn writeScreenFile(
     self: *Surface,

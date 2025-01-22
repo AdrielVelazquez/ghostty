@@ -23,7 +23,7 @@ const objc = @import("objc");
 
 const log = std.log.scoped(.app);
 
-const SurfaceList = std.ArrayListUnmanaged(*apprt.Surface);
+pub const SurfaceList = std.ArrayListUnmanaged(*apprt.Surface);
 
 /// General purpose allocator
 alloc: Allocator,
@@ -175,6 +175,9 @@ pub fn addSurface(
     self: *App,
     rt_surface: *apprt.Surface,
 ) Allocator.Error!void {
+    // NOTE: Appending all the surfaces to a list gives an easy location for me to access the
+    // scrollback history. None of the cli commands has access to the screen without instantitating a new one.
+    // Let's see where this takes us.
     try self.surfaces.append(self.alloc, rt_surface);
 
     // Since we have non-zero surfaces, we can cancel the quit timer.

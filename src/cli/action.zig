@@ -9,6 +9,7 @@ const list_keybinds = @import("list_keybinds.zig");
 const list_themes = @import("list_themes.zig");
 const list_colors = @import("list_colors.zig");
 const list_actions = @import("list_actions.zig");
+const output_buffer = @import("output_buffer.zig");
 const show_config = @import("show_config.zig");
 const validate_config = @import("validate_config.zig");
 const crash_report = @import("crash_report.zig");
@@ -38,6 +39,9 @@ pub const Action = enum {
 
     /// List keybind actions
     @"list-actions",
+
+    /// Write the entire scrollback history to terminal
+    @"output-buffer",
 
     /// Dump the config to stdout
     @"show-config",
@@ -147,6 +151,9 @@ pub const Action = enum {
             .@"list-themes" => try list_themes.run(alloc),
             .@"list-colors" => try list_colors.run(alloc),
             .@"list-actions" => try list_actions.run(alloc),
+            .@"output-buffer" => try output_buffer.run(
+                alloc,
+            ), // I need to pass in the current surface somehow here.
             .@"show-config" => try show_config.run(alloc),
             .@"validate-config" => try validate_config.run(alloc),
             .@"crash-report" => try crash_report.run(alloc),
@@ -182,6 +189,7 @@ pub const Action = enum {
                 .@"list-themes" => list_themes.Options,
                 .@"list-colors" => list_colors.Options,
                 .@"list-actions" => list_actions.Options,
+                .@"output-buffer" => output_buffer.Options,
                 .@"show-config" => show_config.Options,
                 .@"validate-config" => validate_config.Options,
                 .@"crash-report" => crash_report.Options,
