@@ -4314,6 +4314,26 @@ fn closingAction(action: input.Binding.Action) bool {
     };
 }
 
+fn openScreenFile(
+    path: []const u8,
+) !void {
+    const allocator = std.heap.page_allocator;
+
+    const editor = std.os.getenv("EDITOR") orelse {
+        std.log.err("EDITOR environment variable not set", .{});
+        return error.EnvironmentVariableNotFound;
+    };
+
+    var argv = std.ArrayList([]const u8).init(allocator);
+    defer argv.deinit();
+    try argv.appendSlice(&[_][]const u8{
+        editor,
+        path,
+    });
+
+    try std.process.execute(argv.items, std.process.Options{});
+}
+
 /// The portion of the screen to write for writeScreenFile.
 const WriteScreenLoc = enum {
     screen, // Full screen
@@ -4410,6 +4430,7 @@ fn writeScreenFile(
 
     switch (write_action) {
         .open => try internal_os.open(self.alloc, .text, path),
+        .editor => try openScreenFile(path),
         .paste => self.io.queueMessage(try termio.Message.writeReq(
             self.alloc,
             path,
