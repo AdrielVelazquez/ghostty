@@ -16,7 +16,9 @@ pub const Mailbox = apprt.surface.Mailbox;
 pub const Message = apprt.surface.Message;
 
 const std = @import("std");
+const process = std.process;
 const builtin = @import("builtin");
+const env = @import("os/env.zig");
 const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
 const ArenaAllocator = std.heap.ArenaAllocator;
@@ -4315,23 +4317,17 @@ fn closingAction(action: input.Binding.Action) bool {
 }
 
 fn openScreenFile(
-    path: []const u8,
+    file_path: []const u8,
 ) !void {
-    const allocator = std.heap.page_allocator;
-
-    const editor = std.os.getenv("EDITOR") orelse {
+    const editor = std.posix.getenv("EDITOR") orelse {
         std.log.err("EDITOR environment variable not set", .{});
         return error.EnvironmentVariableNotFound;
     };
 
-    var argv = std.ArrayList([]const u8).init(allocator);
-    defer argv.deinit();
-    try argv.appendSlice(&[_][]const u8{
-        editor,
-        path,
-    });
-
-    try std.process.execute(argv.items, std.process.Options{});
+    var cmd = std.process.Child.init(&[_][]const u8{ editor, file_path }, std.heap.page_allocator);
+    try cmd.spawn();
+    // in a real application you'd not want to ignore the status here probably
+    _ = try cmd.wait();
 }
 
 /// The portion of the screen to write for writeScreenFile.
