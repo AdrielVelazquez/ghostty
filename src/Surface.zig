@@ -4314,8 +4314,68 @@ fn closingAction(action: input.Binding.Action) bool {
     };
 }
 
+pub const Options = struct {
+    /// This is set by the CLI parser for deinit.
+    _arena: ?ArenaAllocator = null,
+
+    /// The font family to search for. If this is set, then only fonts
+    /// matching this family will be listed.
+    family: ?[:0]const u8 = null,
+
+    /// The style name to search for.
+    style: ?[:0]const u8 = null,
+
+    /// Font styles to search for. If this is set, then only fonts that
+    /// match the given styles will be listed.
+    bold: bool = false,
+    italic: bool = false,
+};
+
+pub fn run(self: *Surface) !u8 {
+    // const pages = terminal.screen.pages;
+    // const pages = &self.io.terminal.screen.pages;
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("adriel", .{});
+    &self.io.terminal.screen.pages;
+    // Surface.writeScreenFile()
+
+    // screen.writeScreenFile(terminal.screen.WriteScreenLoc, input.Binding.Action.WriteScreenAction.contents);
+    // const pages = &terminal.screen.pages;
+    // const sel_: ?terminal.Selection = switch (loc) {
+    //     .history => history: {
+    //         // We do not support this for alternate screens
+    //         // because they don't have scrollback anyways.
+    //         if (self.io.terminal.active_screen == .alternate) {
+    //             break :history null;
+    //         }
+    //
+    //         break :history terminal.Selection.init(
+    //             pages.getTopLeft(.history),
+    //             pages.getBottomRight(.history) orelse
+    //                 break :history null,
+    //             false,
+    //         );
+    //     },
+    //
+    //     .screen => screen: {
+    //         break :screen terminal.Selection.init(
+    //             pages.getTopLeft(.screen),
+    //             pages.getBottomRight(.screen) orelse
+    //                 break :screen null,
+    //             false,
+    //         );
+    //     },
+    //
+    //     .selection => self.io.terminal.screen.selection,
+    // };
+    //
+    //
+
+    return 0;
+}
+
 /// The portion of the screen to write for writeScreenFile.
-const WriteScreenLoc = enum {
+pub const WriteScreenLoc = enum {
     screen, // Full screen
     history, // History (scrollback)
     selection, // Selected text
@@ -4330,6 +4390,7 @@ fn writeScreenFile(
     var tmp_dir = try internal_os.TempDir.init();
     errdefer tmp_dir.deinit();
 
+    // const writer = std.io.getStdOut().writer();
     var filename_buf: [std.fs.max_path_bytes]u8 = undefined;
     const filename = try std.fmt.bufPrint(&filename_buf, "{s}.txt", .{@tagName(loc)});
 
@@ -4345,6 +4406,9 @@ fn writeScreenFile(
 
     // Screen.dumpString writes byte-by-byte, so buffer it
     var buf_writer = std.io.bufferedWriter(file.writer());
+    if (write_action == input.Binding.Action.WriteScreenAction.contents) {
+        buf_writer = std.io.getStdOut();
+    }
 
     // Write the scrollback contents. This requires a lock.
     {
@@ -4403,17 +4467,22 @@ fn writeScreenFile(
         );
     }
     try buf_writer.flush();
+    if (write_action == input.Binding.Action.WriteScreenAction.contents) {
+        // buf_writer = std.io.getStdOut();
+        // pass
+    } else {
+        try buf_writer.flush();
+        // Get the final path
+        var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const path = try tmp_dir.dir.realpath(filename, &path_buf);
 
-    // Get the final path
-    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const path = try tmp_dir.dir.realpath(filename, &path_buf);
-
-    switch (write_action) {
-        .open => try internal_os.open(self.alloc, .text, path),
-        .paste => self.io.queueMessage(try termio.Message.writeReq(
-            self.alloc,
-            path,
-        ), .unlocked),
+        switch (write_action) {
+            .open => try internal_os.open(self.alloc, .text, path),
+            .paste => self.io.queueMessage(try termio.Message.writeReq(
+                self.alloc,
+                path,
+            ), .unlocked),
+        }
     }
 }
 
