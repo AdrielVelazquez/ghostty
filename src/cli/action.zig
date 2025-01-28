@@ -51,6 +51,9 @@ pub const Action = enum {
     // Show which font face Ghostty loads a codepoint from.
     @"show-face",
 
+    /// Print Scrollback Buffer to stdout
+    @"output-buffer",
+
     pub const Error = error{
         /// Multiple actions were detected. You can specify at most one
         /// action on the CLI otherwise the behavior desired is ambiguous.
@@ -151,6 +154,7 @@ pub const Action = enum {
             .@"validate-config" => try validate_config.run(alloc),
             .@"crash-report" => try crash_report.run(alloc),
             .@"show-face" => try show_face.run(alloc),
+            .@"output-buffer" => try output_buffer.run(alloc),
         };
     }
 
@@ -186,6 +190,7 @@ pub const Action = enum {
                 .@"validate-config" => validate_config.Options,
                 .@"crash-report" => crash_report.Options,
                 .@"show-face" => show_face.Options,
+                .@"output-buffer" => output_buffer.Options,
             };
         }
     }
