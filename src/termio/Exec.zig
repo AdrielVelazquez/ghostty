@@ -524,6 +524,7 @@ pub fn queueWrite(
     // our cached buffers that we can queue to the stream.
     var i: usize = 0;
     while (i < data.len) {
+        std.log.info("figuring out how much memory to use", .{});
         const req = try exec.write_req_pool.getGrow(alloc);
         const buf = try exec.write_buf_pool.getGrow(alloc);
         const slice = slice: {

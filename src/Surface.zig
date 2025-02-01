@@ -31,6 +31,7 @@ const termio = @import("termio.zig");
 const objc = @import("objc");
 const imgui = @import("imgui");
 const pty = @import("pty.zig");
+
 const font = @import("font/main.zig");
 const Command = @import("Command.zig");
 const terminal = @import("terminal/main.zig");
@@ -4327,7 +4328,6 @@ fn openScreenFile(
     };
     const allocator = std.heap.page_allocator;
     // const argv = try allocator.alloc([]const u8, 2);
-    // //
     // argv[0] = editor;
     // argv[1] = file_path;
     // // std.log.info("Got the editor correctly", .{});
@@ -4368,27 +4368,32 @@ fn openScreenFile(
     //
 
     // Allocate a buffer to hold the command. Add extra space for safety and the escape sequences.
-    const command_buf = try allocator.alloc(u8, editor.len + file_path.len + 128);
-    errdefer allocator.free(command_buf);
+    //
+    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 
-    const command = try std.fmt.bufPrint(
-        command_buf,
-        "{s} {s}\n",
-        .{ editor, file_path },
-    );
+    std.log.info("created the allocator", .{});
+    // const allocator = gpa.allocator();
+    std.log.info("Allocated it", .{});
 
-    self.io.queueMessage(try termio.Message.writeReq(
-        allocator,
-        command,
-    ), .unlocked);
+    const command = try std.fmt.allocPrint(allocator, "{s} {s}", .{ editor, file_path });
 
-    // const message: termio.Message = .{
-    //     .write_alloc = .{
-    //         .alloc = allocator,
-    //         .data = command,
-    //     },
-    // };
-    // self.io.queueMessage(message, .unlocked);
+    std.log.info("Created the command", .{});
+    // defer allocator.free(command);
+    var td = termio.Termio.ThreadData{ .alloc = allocator, .loop = &self.io_thread.loop, .renderer_state = self.io.renderer_state, .surface_mailbox = self.io.surface_mailbox, .backend = undefined, .mailbox = &self.io.mailbox };
+
+    std.log.info("Created the thread data, and going to send to the write", .{});
+    // try self.io.queueWrite(&td, command, false);
+    if (self.io.queueWrite(&td, command, true)) |result| {
+        // Successfully queuedo
+        std.log.info("I did the write correctly", .{});
+        std.log.info("{}", .{result});
+    } else |err| {
+        std.debug.print("queueWrite error: {}\n", .{err});
+    }
+    // self.io.queueMessage(try termio.Message.writeReq(
+    //     allocator,
+    //     command,
+    // ), .locked);
 }
 
 /// The portion of the screen to write for writeScreenFile.
