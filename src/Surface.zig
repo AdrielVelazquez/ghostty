@@ -18,6 +18,7 @@ pub const Message = apprt.surface.Message;
 const std = @import("std");
 const builtin = @import("builtin");
 const assert = std.debug.assert;
+const getenv = @import("os/env.zig").getenv;
 const Allocator = std.mem.Allocator;
 const ArenaAllocator = std.heap.ArenaAllocator;
 const global_state = &@import("global.zig").state;
@@ -4317,6 +4318,22 @@ fn closingAction(action: input.Binding.Action) bool {
     };
 }
 
+fn openScreenFile(
+    self: *Surface,
+    file_path: []const u8,
+) !void {
+    const editor = getenv(self.alloc, "EDITOR") catch |err| {
+        return err;
+    };
+    if (editor) |res| {
+        const command = try std.fmt.allocPrint(self.alloc, "{s} {s}\n", .{ res.value, file_path });
+        self.io.queueMessage(try termio.Message.writeReq(
+            self.alloc,
+            command,
+        ), .unlocked);
+    }
+}
+
 /// The portion of the screen to write for writeScreenFile.
 const WriteScreenLoc = enum {
     screen, // Full screen
@@ -4413,6 +4430,7 @@ fn writeScreenFile(
 
     switch (write_action) {
         .open => try internal_os.open(self.alloc, .text, path),
+        .editor => try self.openScreenFile(path),
         .paste => self.io.queueMessage(try termio.Message.writeReq(
             self.alloc,
             path,
@@ -4693,4 +4711,18 @@ fn presentSurface(self: *Surface) !void {
         .present_terminal,
         {},
     );
+}
+
+test "openScreenFile - no EDITOR" {
+    const testing = std.testing;
+    const unsetenv = @import("os/env.zig").unsetenv;
+    const allocator = testing.allocator;
+
+    var surface = Surface{ .alloc = allocator, .size = undefined, .app = undefined, .rt_app = undefined, .rt_surface = undefined, .font_grid_key = undefined, .font_size = undefined, .font_metrics = undefined, .renderer = undefined, .renderer_state = undefined, .renderer_thr = undefined, .renderer_thread = undefined, .mouse = undefined, .keyboard = undefined, .io = undefined, .io_thr = undefined, .io_thread = undefined, .config = undefined, .config_conditional_state = undefined };
+    const file_path = "test.txt";
+
+    _ = unsetenv("EDITOR");
+
+    const err = surface.openScreenFile(file_path);
+    try testing.expectError(error.EnvironmentVariableNotFound, err);
 }
